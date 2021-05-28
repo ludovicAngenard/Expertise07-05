@@ -1,47 +1,55 @@
-const fastify = require('fastify')({ logger: true });
-const fastifyEnv = require('fastify-env');
+const fastify = require('fastify')({
+    logger: true
+})
 
-fastify.register(fastifyEnv, {
-  dotenv: true,
-  schema: {
-    type: 'object',
-    required: [ 'MONGODB' ],
-    properties: {
-      MONGODB: {
-        type: 'string',
-        default: ''
-      }
+fastify.get('/', function (request, reply) {
+    reply.send({ hello: 'world' })
+})
+
+// connection à la BDD
+fastify.register(require('fastify-mysql'), {
+connectionString: 'mysql://root@localhost:3308/marioclicker'
+})
+
+// Récupération d'un user dans la BDD grâce à son ID
+fastify.get('/user/:id', (req, reply) => {
+fastify.mysql.getConnection(onConnect)
+
+    function onConnect (err, client) {
+        if (err) return reply.send(err)
+
+        client.query(
+        'SELECT id, username, hash, salt FROM users WHERE id=?', [req.params.id],
+        function onResult (err, result) {
+            client.release()
+            reply.send(err || result)
+        }
+        )
     }
-  }
-});
+})
 
-fastify.after(err => err?console.log(err):console.log('Env Plugin is ready.'))
-
-fastify.register(require('./plugins/mongo-db'));
-
-fastify.after(err => err?console.log(err):console.log('MongoDB Plugin is reqdy.'))
-
-fastify.register(require('./routes/messages'), {
-  prefix: "/api/v1"
-});
-
-fastify.after(err => err?console.log(err):console.log('Message API routes are ready.'))
-
-fastify.ready(err => err?console.log(err):console.log('All plugins are ready'))
-
-fastify.setErrorHandler(function (error, request, reply) {
-    if (error.validation) {
-       reply.status(422).send(new Error('validation failed'))
+fastify.post('/register', function (request, reply) {
+    // vérifier les attributs
+    console.log(request.body)
+    console.log(request.body["userName"])
+    // on envoie les données
+    fastify.mysql.getConnection(onRegister)
+    request.log.info('some info')
+    function onRegister (err, client) {
+        if (err) return reply.send(err)
+        var user = request.body["userName"]
+        var password = request.body["password"]
+        client.query(
+        `INSERT username, password INTO user VALUES(${user}, ${password})`,
+        )
     }
-});
+  })
 
-const start = async () => {
-  try {
-    await fastify.listen(8000);
-  } catch (err) {
-    fastify.log.error(err);
-    process.exit(1);
-  }
-};
 
-start();
+fastify.listen(8200, function (err, address) {
+    if (err) {
+        fastify.log.error(err)
+        process.exit(1)
+    }
+    fastify.log.info(`server listening on ${address}`)
+    })

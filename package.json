@@ -22,6 +22,7 @@
   "homepage": "https://github.com/ludovicAngenard/Expertise07-05#readme",
   "dependencies": {
     "fastify": "^3.16.2",
+    "fastify-mysql": "^2.1.0",
     "fastify-socket.io": "^2.0.0",
     "fastify-static": "^4.0.1",
     "socket.io-client": "^4.0.2"
