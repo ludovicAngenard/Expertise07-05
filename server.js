@@ -1,50 +1,91 @@
-const fastify = require('fastify')({
-    logger: true
-})
+const fastify = require('fastify')();
+const path = require('path')
 
-fastify.get('/', function (request, reply) {
-    reply.send({ hello: 'world' })
+fastify.register(require('fastify-static'), {
+    root: path.join(__dirname, 'public'),
+    prefix: '/public/', // optional: default '/'
 })
-
-// connection à la BDD
 fastify.register(require('fastify-mysql'), {
-connectionString: 'mysql://root@localhost:3308/marioclicker'
+    connectionString: 'mysql://root@localhost:3308/marioclicker'
 })
+const io = require('socket.io')(fastify.server);
+fastify.register(require('./routes/game'), {
+});
+fastify.register(require('./routes/connect'), {
+});
 
-// Récupération d'un user dans la BDD grâce à son ID
-fastify.get('/user/:id', (req, reply) => {
-fastify.mysql.getConnection(onConnect)
+// io.on('connection', function(socket){
+//     console.log("l'utilisateur est connecté")
+// })
+// fastify.socket.on('connection', function(client) {
+//     console.log('Client connected...');
 
-    function onConnect (err, client) {
-        if (err) return reply.send(err)
+//     client.on('join', function(data) {
+//         console.log(data);
+//     });
 
-        client.query(
-        'SELECT id, username, hash, salt FROM users WHERE id=?', [req.params.id],
-        function onResult (err, result) {
-            client.release()
-            reply.send(err || result)
+// });
+
+// fastify.get('/game', function (request, reply) {
+//     return reply.sendFile('index.html')
+// })
+// connection à la BDD
+io.on('connection', function(socket){
+    console.log("l'utilisateur est connecté")
+    socket.on('login', function(username, password){
+        if (username && password){
+            fastify.mysql.getConnection(onConnect)
         }
-        )
-    }
+
+        function onConnect(err, client){
+            client.query(
+                `SELECT userName, id, score  FROM user WHERE password = '${password}' AND userName = '${username}'`,
+                function onResult (err, result) {
+                    console.log(result )
+                    if(result && result.length > 0 ){
+                        socket.emit('redirect', "http://localhost:8200/game", result)
+                    } else {
+                        client.query(
+                            `INSERT INTO user (userName, password) VALUES ('${username}', '${password}');`,
+                        )
+                        client.query(
+                            `SELECT userName, id, score  FROM user WHERE password = '${password}' AND userName = '${username}'`,
+                            function onResult(err, result){
+                                socket.emit('redirect', "http://localhost:8200/game", result)
+                            }
+                        )
+
+                    }
+                }
+            )
+
+        }
+    })
+
+    socket.on("leaderboard", function(score, id){
+        fastify.mysql.getConnection(editScore)
+
+        function editScore(err, client){
+            client.query(
+                `UPDATE user  SET score = ${score} WHERE user.id = ${id}`,
+                function onResult (err, result) {
+                    console.log("votre score est mis à jour : " + JSON.stringify(result))
+                }
+            )
+
+        }
+        fastify.mysql.getConnection(showLeaderbord)
+
+        function showLeaderbord(err, client){
+            client.query(
+                `SELECT score, userName FROM user ORDER BY score DESC LIMIT 10 `,
+                function onResult (err, top10) {
+                    socket.emit("show leaderboard", top10)
+                }
+            )
+        }
+    })
 })
-
-fastify.post('/register', function (request, reply) {
-    // vérifier les attributs
-    console.log(request.body)
-    console.log(request.body["userName"])
-    // on envoie les données
-    fastify.mysql.getConnection(onRegister)
-    request.log.info('some info')
-    function onRegister (err, client) {
-        if (err) return reply.send(err)
-        var user = request.body["userName"]
-        var password = request.body["password"]
-        client.query(
-        `INSERT username, password INTO user VALUES(${user}, ${password})`,
-        )
-    }
-  })
-
 
 fastify.listen(8200, function (err, address) {
     if (err) {
@@ -52,4 +93,4 @@ fastify.listen(8200, function (err, address) {
         process.exit(1)
     }
     fastify.log.info(`server listening on ${address}`)
-    })
+})

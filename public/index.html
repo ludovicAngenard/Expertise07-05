@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="fr">
+    <head>
+        <meta charset="utf8">
+        <title> first page</title>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+        <link rel="stylesheet" href="public/css/style.css">
+        <script src="https://code.jquery.com/jquery-3.5.0.js" integrity="sha256-r/AaFHrszJtwpe+tHyNi/XCfMxYpbsRg2Uqn0x3s2zc=" crossorigin="anonymous"></script>
+        <script src="public/js/Bonus.js"></script>
+        <script src="public/js/Personnage.js"></script>
+        <script src="public/js/index.js"></script>
+        <script src="/socket.io/socket.io.js"></script>
+          <script>
+            var socket = io();
+            oldScore = 0
+            var id = localStorage.getItem('id')
+            setInterval(() => {
+                console.log(" on vérifie le score")
+                if (score != oldScore){
+                    oldScore = score
+                    socket.emit("leaderboard", score, id)
+                }
+            }, 10000);
+
+            socket.on("show leaderboard", function(top10){
+                console.log(top)
+                var contenue = '';
+                top10.forEach(user => {
+                    console.log(user)
+                    contenue += `<li>${user["userName"]} : ${user["score"]}</li>`
+
+                });
+                console.log(contenue)
+                document.getElementById("leaderboard").innerHTML = contenue
+            })
+          </script>
+    </head>
+    <body>
+
+        <div class=" Container gauche margin-top">
+            <ul id="leaderboard">
+            </ul>
+        </div>
+
+        <div class='Container gauche' id='contientMarioEtPiece'>
+
+            <div class="d-flex justify-content-start">
+                <img src='public/images/piece.png' id="compteur"  class='compteur pieceCout'; />
+                <p id='compteurChiffre' class='compteur texte'>X 0</p>
+            </div>
+
+
+
+            <div class="d-flex justify-content-center">
+                <img src='public/images/piece.png' id="piece" />
+            </div>
+
+            <div class="d-flex justify-content-center">
+                <img src='public/images/MarioPound.png' id="MarioPoids" />
+            </div>
+
+            <div class="d-flex justify-content-center">
+                <img src='public/images/block.png' class="block"  />
+            </div>
+            <div class="d-flex justify-content-center">
+                <img src='public/images/10Coin.png' id="pieceDessous" />
+            </div>
+
+            <div class=" gauche " id='inventaireBoutton'>
+                <img src='public/images/MysteryBox.png'   onclick=apparitionSac(); />
+
+            </div>
+            <div class=" droite " id='combatBouton'>
+                <img src='public/images/bowserBouton.png'   onclick=combat(); />
+
+            </div>
+
+            <div class="d-flex justify-content-center">
+                <img src='public/images/MarioNSMBUDeluxe.png' class="Mario" id='icon' onclick=saut() />
+            </div>
+
+        </div>
+
+        <div  class='Container' id="ContientCombat">
+
+            <div class='d-flex justify-content-end'>
+                <p id="bowserVieIndicateur" class='droite texte'> 1000 X</p>
+                <img class='droite' src='public/images/Bowserhead.png' />
+            </div>
+
+            <div class="gauche " id="marioCombat">
+                <img src='public/images/MarioNSMBUDeluxe.png'/>
+            </div>
+
+            <div class="droite " id="bowserCombat">
+                <img src='public/images/Bowser.png' onclick="cliqueContreBowser();"/>
+            </div>
+            <div class=" " id="carapaceVerte">
+                <img src='public/images/carapaceVerte.png' onclick="cliqueCarapaceVerte()"/>
+            </div>
+
+        </div>
+
+        <div class="ContainerPetit droite username">
+            <span>Nom d'utilisateur</span>
+        </div>
+
+
+        <div class='ContainerPetit droite fondBrique' id='boutique'>
+
+
+            <img src='public/images/StarCoin.png' class="bonus" id='StarCoin' onclick=multiplicateurDeGain(); />
+            <img src='public/images/piece.png' class='pieceCout gauche' />
+            <p id='prixPieceEtoile' class='texteCout texte'>X 300</p>
+            <div class='clear'></div>
+            <p class='titre texte'>Boost de pièces</p>
+
+
+
+            <img src='public/images/LuigiCasquette.png' class="bonus" id='luigi' onclick=achatAutoGain(); />
+            <img src='public/images/piece.png'  class='pieceCout gauche'/>
+            <p id='prixLuigi' class='texteCout texte '>X 100</p>
+            <div class='clear'></div>
+            <p class='titre texte'>A deux c'est mieux</p>
+
+
+
+
+            <img src='public/images/champignon.png' class="bonus " id='champignon' onclick=multiplicateurDegat(); />
+            <img src='public/images/piece.png'  class='pieceCout gauche'/>
+            <p id='prixChampignon' class='texteCout texte '>X 500</p>
+            <div class='clear'></div>
+            <p class='titre texte'>Boost de dégats</p>
+
+
+        </div>
+
+
+
+
+        <div id='sac' class="ContainerMoyen fondBrique">
+
+            <img src='public/images/croix.png' class="droite" id='StarCoin' onclick=apparitionSac(); />
+            <div class='clear'></div>
+
+            <p class='titre texte'>INVENTAIRE</p>
+
+            <div>
+                <img src='public/images/champignon.png' class="gauche"  />
+
+                <div class='clear'></div>
+
+                <p id='inventaireNombreChampignon' class='texte'>X 0 </p>
+            </div>
+        </div>
+
+
+
+        <div class='ContainerPetit droite fondBrique' id='bonusCombat'>
+
+            <img src='public/images/champignon.png' class="bonus" id='champignonCombat' onclick="bonusDeDegats();"/>
+            <p id='NombreChampignon' class=' texte' >Nombre : 0</p>
+
+        </div>
+    </body>
+</html>
