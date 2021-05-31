@@ -1,6 +1,9 @@
+// require modules
 const fastify = require('fastify')();
 const path = require('path')
+const io = require('socket.io')(fastify.server);
 
+// register fastify plugin
 fastify.register(require('fastify-static'), {
     root: path.join(__dirname, 'public'),
     prefix: '/public/', // optional: default '/'
@@ -8,30 +11,18 @@ fastify.register(require('fastify-static'), {
 fastify.register(require('fastify-mysql'), {
     connectionString: 'mysql://root@localhost:3308/marioclicker'
 })
-const io = require('socket.io')(fastify.server);
+
+// register routes
 fastify.register(require('./routes/game'), {
 });
 fastify.register(require('./routes/connect'), {
 });
 
-// io.on('connection', function(socket){
-//     console.log("l'utilisateur est connecté")
-// })
-// fastify.socket.on('connection', function(client) {
-//     console.log('Client connected...');
-
-//     client.on('join', function(data) {
-//         console.log(data);
-//     });
-
-// });
-
-// fastify.get('/game', function (request, reply) {
-//     return reply.sendFile('index.html')
-// })
-// connection à la BDD
+// listen if an user is connected
 io.on('connection', function(socket){
     console.log("l'utilisateur est connecté")
+
+    // listen when the user send his log
     socket.on('login', function(username, password){
         if (username && password){
             fastify.mysql.getConnection(onConnect)
@@ -39,29 +30,30 @@ io.on('connection', function(socket){
 
         function onConnect(err, client){
             client.query(
+
                 `SELECT userName, id, score  FROM user WHERE password = '${password}' AND userName = '${username}'`,
                 function onResult (err, result) {
-                    console.log(result )
                     if(result && result.length > 0 ){
                         socket.emit('redirect', "http://localhost:8200/game", result)
                     } else {
                         client.query(
+
                             `INSERT INTO user (userName, password) VALUES ('${username}', '${password}');`,
                         )
                         client.query(
+
                             `SELECT userName, id, score  FROM user WHERE password = '${password}' AND userName = '${username}'`,
                             function onResult(err, result){
                                 socket.emit('redirect', "http://localhost:8200/game", result)
                             }
                         )
-
                     }
                 }
             )
-
         }
     })
 
+    // listen when the leaderboard is updating
     socket.on("leaderboard", function(score, id){
         fastify.mysql.getConnection(editScore)
 
@@ -87,6 +79,7 @@ io.on('connection', function(socket){
     })
 })
 
+// run the server
 fastify.listen(8200, function (err, address) {
     if (err) {
         fastify.log.error(err)

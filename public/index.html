@@ -10,30 +10,7 @@
         <script src="public/js/Personnage.js"></script>
         <script src="public/js/index.js"></script>
         <script src="/socket.io/socket.io.js"></script>
-          <script>
-            var socket = io();
-            oldScore = 0
-            var id = localStorage.getItem('id')
-            setInterval(() => {
-                console.log(" on vérifie le score")
-                if (score != oldScore){
-                    oldScore = score
-                    socket.emit("leaderboard", score, id)
-                }
-            }, 10000);
-
-            socket.on("show leaderboard", function(top10){
-                console.log(top)
-                var contenue = '';
-                top10.forEach(user => {
-                    console.log(user)
-                    contenue += `<li>${user["userName"]} : ${user["score"]}</li>`
-
-                });
-                console.log(contenue)
-                document.getElementById("leaderboard").innerHTML = contenue
-            })
-          </script>
+        <script src="public/js/leaderboard.js"></script>
     </head>
     <body>
 
@@ -71,7 +48,7 @@
 
             </div>
             <div class=" droite " id='combatBouton'>
-                <img src='public/images/bowserBouton.png'   onclick=combat(); />
+                <img src='public/images/bowserBouton.png' ; />
 
             </div>
 

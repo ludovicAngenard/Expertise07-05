@@ -1,6 +1,7 @@
 async function game (fastify, options) {
+
     fastify.get('/game', function (request, reply) {
-        return reply.sendFile('index.html')
+        return reply.code( 200 ).sendFile('index.html')
     })
 }
 module.exports = game
